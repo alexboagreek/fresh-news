@@ -1,3 +1,3 @@
 # fresh-news
 
-## <HTML> <CSS> </JS>
+## HTML CSS /JS
