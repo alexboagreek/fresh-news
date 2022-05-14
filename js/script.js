@@ -20,6 +20,8 @@ const getData = async (url) => {
 
 const renderCard = (data) => {
     newsList.textContent ='';
+
+
     data.forEach(news => {
         const card = document.createElement('li');
         card.className = 'news-item';
@@ -35,7 +37,7 @@ const renderCard = (data) => {
             <time class="news-datetime" datetime="${news.publishedAt}">
                 <span class="news-date">${news.publishedAt}</span> 11:06
             </time>
-            <div class="news-author">${news.author}</div>
+            <div class="news-author">${news.author || news.source.name || ''}</div>
         </div>
         
         `;
@@ -46,7 +48,7 @@ const renderCard = (data) => {
 }
 
 const loadNews = async () => {
-    const data = await getData('https://newsapi.org/v2/top-headlines?country=ru');
+    const data = await getData('https://newsapi.org/v2/top-headlines?country=ru&category=sports');
     renderCard(data.articles);
 };
 
