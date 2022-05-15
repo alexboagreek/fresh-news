@@ -1,7 +1,8 @@
 const API_KEY = 'aec33696be6649b7adca9116c819246d';
 const element = document.querySelector('.js-choice');
 const newsList = document.querySelector('.news-list');
-
+const formSearch = document.querySelector('.form-search');
+const title = document.querySelector('.title');
 const choices = new Choices(element, {
     searchEnabled: false,
     itemSelectText: '',
@@ -18,29 +19,70 @@ const getData = async (url) => {
     return data;
 };
 
+const getDateCorrectFormat = (isoDate) => {
+
+    const date = new Date(isoDate);
+    const fullDate = date.toLocaleString('en-GB', {
+        year: 'numeric',
+        month: 'numeric',
+        day: 'numeric',
+    });
+    const fullTime = date.toLocaleString('en-GB', {
+        hour: 'numeric',
+        minute: 'numeric',
+    });
+    return `<span class="news-date">${fullDate}</span> ${fullTime}`
+}
+ 
+const getImage = url => new Promise((resolve, reject) => {
+    const image = new Image(270, 200);
+
+    image.addEventListener('load', () => {
+        resolve(image)
+    });
+
+    image.addEventListener('error', () => {
+        image.src = 'assets/img/no-photo.svg';
+        resolve(image);
+    });
+
+    image.src = url || 'assets/img/no-photo.svg';
+    image.className ='news-image';
+
+    return image;
+});
+
 const renderCard = (data) => {
     newsList.textContent ='';
 
 
-    data.forEach(news => {
+    data.forEach( async news => {
+
+        const { urlToImage, title, url, description, publishedAt, author } = news;
         const card = document.createElement('li');
         card.className = 'news-item';
-        card.innerHTML = `
-        <img src="${news.urlToImage}" alt="${news.title}" width="270" height="200">
+
+        const image = await getImage(urlToImage);
+        image.alt = title;
+        card.append(image);
+
+
+        card.insertAdjacentHTML('beforeend',  `
+        
         <h3 class="news-title">
-            <a href="${news.url}" class="news-link" target="_blank">${news.title}</a>
+            <a href="${ url }" class="news-link" target="_blank">${ title || '' }</a>
         </h3>
 
-        <p class="news-description">${news.description}</p>
+        <p class="news-description">${ description || '' }</p>
 
         <div class="news-footer">
-            <time class="news-datetime" datetime="${news.publishedAt}">
-                <span class="news-date">${news.publishedAt}</span> 11:06
+            <time class="news-datetime" datetime="${ publishedAt }">
+                ${ getDateCorrectFormat(publishedAt) }
             </time>
-            <div class="news-author">${news.author || news.source.name || ''}</div>
+            <div class="news-author">${ author || news.source.name || ''}</div>
         </div>
         
-        `;
+        `);
 
         newsList.append(card);
     })
@@ -48,13 +90,35 @@ const renderCard = (data) => {
 }
 
 const loadNews = async () => {
-    const data = await getData('https://newsapi.org/v2/top-headlines?country=ru&category=sports');
+    newsList.innerHTML = '<li class="preload"></li>';
+    const  country = localStorage.getItem('country') || 'ru';
+    choices.setChoiceByValue(country);
+    title.classList.add('hide');
+
+    const data = await getData(`https://newsapi.org/v2/top-headlines?country=${country}&pageSize=32`);
     renderCard(data.articles);
 };
 
-element.addEventListener('change', (event) => {
 
+const loadSearch = async (value)  => {
+    
+    const data = await getData(`https://newsapi.org/v2/everything?q=${value}`);
+    title.classList.remove('hide');
+    title.textContent = `По вашему запросу "${value}" найдено ${data.articles.length} результатов`;
+    choices.setChoiceByValue('');
+    renderCard(data.articles);
+}
+
+element.addEventListener('change', (event) => {
+    const value = event.detail.value;
+    localStorage.setItem('country', value);
+    loadNews(value);
 });
 
+formSearch.addEventListener('submit', event => {
+    event.preventDefault();
+    loadSearch(formSearch.search.value);
+    formSearch.reset();
+});
 
 loadNews();
