@@ -52,4 +52,9 @@ const loadNews = async () => {
     renderCard(data.articles);
 };
 
+element.addEventListener('change', (event) => {
+
+});
+
+
 loadNews();
